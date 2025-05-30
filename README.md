@@ -1,5 +1,5 @@
 # git-overleaf-sync
-Automate the process of downloading Overleaf projects, sync them into a local Git repository, generate AI-assisted commit messages, and sync the changes remotely.
+Help with the process of downloading Overleaf projects, sync them into a local Git repository, generate AI-assisted commit messages, and sync the changes remotely.
 
 ## Features
 - 🔄 Sync Overleaf Projects: Helps download .zip exports of Overleaf projects via Selenium.
