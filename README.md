@@ -43,6 +43,8 @@ python main.py --overleaf_url https://www.overleaf.com/read/abc123 \
                --api_key sk-abc...
 ```
 You can omit CLI args to use values from .env.
+> [!NOTE]
+> Configuring a cron job to run this script periodically is recommended for continuous syncing.
 
 
 ## Environment Variables
