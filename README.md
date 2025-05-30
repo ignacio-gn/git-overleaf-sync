@@ -60,7 +60,7 @@ You can omit CLI args to use values from .env.
 
 ## How it works
 - Launches a headless Firefox browser via Selenium.
-- Logs into Overleaf (via shared link), simulates a download click to trigger `PUT` event in the Overleaf Backend.
+- Logs into Overleaf (via shared link)
 - Downloads the .zip file of the project.
 - Unzips the .zip archive into a Git repo.
 - Runs git diff to detect changes.
