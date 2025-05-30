@@ -2,13 +2,9 @@ import logging
 import os
 import subprocess
 import time
-from heapq import heappush
-from optparse import Option
 from venv import logger
-from wsgiref.validate import header_re
 
 from selenium import webdriver
-from selenium.webdriver import FirefoxProfile
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -70,12 +66,12 @@ class OverleafParser:
             browser.quit()
             logger.info("Browser closed after download attempt.")
 
-    def get_filename(self):
+    def get_filename(self) -> str:
         if not self.title:
             raise ValueError("title not set, call download() first.")
         return f"{self.title}.zip"
 
-    def clear_dir(self, download_dir=DOWNLOAD_DIR):
+    def clear_dir(self, download_dir:str=DOWNLOAD_DIR):
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
         remove_path = os.path.join(download_dir, f"{self.get_filename()}")
@@ -95,10 +91,3 @@ class OverleafParser:
             if time.time() - start_time > timeout:
                 raise TimeoutError("Download did not complete in time.")
             time.sleep(0.5)
-
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    parser = OverleafParser("https://www.overleaf.com/read/yjktpmxgxjnr")
-    parser.download()

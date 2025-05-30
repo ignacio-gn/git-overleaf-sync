@@ -3,12 +3,11 @@ import logging
 import os
 import subprocess
 import sys
-from ast import parse
-from datetime import datetime
 
 from dotenv import load_dotenv
 
 import helpers
+from git import GitHelper
 from parser import OverleafParser
 
 # load config from .env file
@@ -17,6 +16,8 @@ OVERLEAF_URL = os.getenv("OVERLEAF_URL")
 GIT_REPO_PATH = os.getenv("GIT_REPO_PATH")
 TMP_ZIP_FOLDER = os.getenv("TMP_ZIP_FOLDER", "/tmp/")
 LOGS_FOLDER = os.getenv("LOGS_FOLDER", "/tmp/overleaf_logs")
+OPENWEBUI_URL = os.getenv("OPENWEBUI_URL")
+API_KEY = os.getenv("API_KEY")
 
 def main(args):
     # logging
@@ -35,7 +36,7 @@ def main(args):
         return 1
 
     # download overleaf project
-    logger.info(f"downloading overleaf project from {args.overleaf_url} to {os.path.expanduser(args.git_path)}")
+    logger.debug(f"downloading overleaf project from {args.overleaf_url} to {os.path.expanduser(args.git_path)}")
     parser = OverleafParser(args.overleaf_url)
     try:
         parser.download(download_dir=TMP_ZIP_FOLDER)
@@ -44,7 +45,7 @@ def main(args):
         return 1
 
     # move downloaded files to git repo
-    logger.info(f"moving downloaded files from {TMP_ZIP_FOLDER} to {os.path.expanduser(args.git_path)}")
+    logger.debug(f"moving downloaded files from {TMP_ZIP_FOLDER} to {os.path.expanduser(args.git_path)}")
     proces_unzip = subprocess.run(
         ["unzip", "-o", os.path.join(TMP_ZIP_FOLDER, parser.get_filename()), "-d", os.path.expanduser(args.git_path)],
         capture_output=True,
@@ -53,46 +54,37 @@ def main(args):
     if proces_unzip.returncode != 0:
         logger.error(f"failed to unzip downloaded files: {proces_unzip.stderr}")
         return 1
-    logger.info("unzip completed successfully")
+    logger.debug("unzip completed successfully")
 
-    # commit changes to git
-    logger.info("committing changes to git")
-    os.chdir(os.path.expanduser(args.git_path))
-    proces_git_add = subprocess.run(
-        ["git", "add", "."],
-        capture_output=True,
-        text=True
-    )
-    if proces_git_add.returncode != 0:
-        logger.error(f"failed to add changes to git: {proces_git_add.stderr}")
-        return 1
-    proces_git_commit = subprocess.run(
-        ["git", "commit", "-m", f"[update] {helpers.get_hour()}"],
-        capture_output=True,
-        text=True
-    )
-    if proces_git_commit.returncode != 0:
-        logger.error(f"no changes detected or failed to commit changes to git: {proces_git_commit.stderr}")
+    # get git changes
+    git = GitHelper(args.git_path)
+    if not (git_diff := git.get_diff()):
+        logger.info("no changes detected, exiting")
         return 0
-    logger.info("git commit completed successfully")
+    logger.info("changes detected, proceeding with git operations")
 
-    # push changes to git
-    logger.info("pushing changes to git")
-    proces_git_push = subprocess.run(
-        ["git", "push"],
-        capture_output=True,
-        text=True
+    # analyze changes and prepare commit message
+    openwebui = helpers.OpenWebUIHelper(
+        openwebui_url=args.openwebui_url,
+        api_key=args.api_key,
     )
-    if proces_git_push.returncode != 0:
-        logger.error(f"failed to push changes to git: {proces_git_push.stderr}")
+    commit_message = openwebui.chat_with_model(
+        git_diff
+    )
+    logger.info(f"commit message: {commit_message}")
+
+    # git add, commit, and push
+    if not git.add_all():
         return 1
-    logger.info("git push completed successfully")
+    if not git.commit(commit_message):
+        return 0
+    if not git.push():
+        return 1
 
     return 0
 
 
 if __name__ == "__main__":
-    # argparse
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -112,6 +104,18 @@ if __name__ == "__main__":
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
         help="Set the logging level."
+    )
+    parser.add_argument(
+        "--openwebui_url",
+        type=str,
+        help="URL of the OpenWebUI instance to use for commit message generation.",
+        default=OPENWEBUI_URL
+    )
+    parser.add_argument(
+        "--api_key",
+        type=str,
+        default=API_KEY,
+        help="API key for the OpenWebUI instance."
     )
 
     args = parser.parse_args()
