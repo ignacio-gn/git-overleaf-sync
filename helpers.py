@@ -29,8 +29,8 @@ class OpenWebUIHelper:
                 {
                     "role": "user",
                     "content": prompt + \
-                    f"Generate a concise (50-80 characters) commit message for the above changes." \
-                    f"The message should be in the imperative mood and briefly describe the changes made." \
+                    f"Generate a concise (80-100 characters) commit message for the above changes." \
+                    f"The commit message should be in the imperative mood and describe the changes made in a concise yet descriptive way." \
                     f"Only return the commit message, no other text."
                 }
             ]
