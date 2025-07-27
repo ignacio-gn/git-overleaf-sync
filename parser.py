@@ -69,14 +69,14 @@ class OverleafParser:
     def get_filename(self) -> str:
         if not self.title:
             raise ValueError("title not set, call download() first.")
-        return f"{self.title}.zip"
+        return f"{self.title}.zip".replace(" ", "_")
 
     def clear_dir(self, download_dir:str=DOWNLOAD_DIR):
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
         remove_path = os.path.join(download_dir, f"{self.get_filename()}")
         subprocess.run(
-            ["rm", remove_path],
+            ["rm", "-f", remove_path],
         )
         logger.info(f"Removed from {remove_path}.")
 
