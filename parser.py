@@ -23,7 +23,7 @@ class OverleafParser:
 
     def download(self, download_dir=DOWNLOAD_DIR):
         options = Options()
-        #options.add_argument("--headless")
+        options.add_argument("--headless")
 
         # use custom download directory
         options.set_preference("browser.download.folderList", 2)  # 2 = use custom path
