@@ -23,7 +23,7 @@ class OverleafParser:
 
     def download(self, download_dir=DOWNLOAD_DIR):
         options = Options()
-        options.add_argument("--headless")
+        #options.add_argument("--headless")
 
         # use custom download directory
         options.set_preference("browser.download.folderList", 2)  # 2 = use custom path
@@ -40,7 +40,7 @@ class OverleafParser:
         browser.implicitly_wait(10)
 
         # load title
-        element_title = browser.find_element("xpath", "/html/body/main/div[2]/header/div[2]/span")
+        element_title = browser.find_element("xpath", "/html/body/div[1]/div[2]/nav/div[2]/span")
         if element_title:
             self.title = element_title.text
             logger.debug(f"project title: {self.title}")
@@ -48,20 +48,26 @@ class OverleafParser:
             logger.warning("Could not find project title.")
 
         # open menu
-        menu_button = browser.find_element("xpath", "/html/body/main/div[2]/header/div[1]/div[1]/button")
+        menu_button = browser.find_element("xpath", "/html/body/div[1]/div[2]/nav/div[1]/div[1]/button")
         menu_button.click()
         browser.implicitly_wait(3)
 
         # download
         self.clear_dir(download_dir)
         try:
-            element = WebDriverWait(browser, 10).until(
-                EC.presence_of_element_located(
-                    (By.XPATH, "/html/body/div[2]/div/ul[1]/li[1]/a"))
-            )
-            element.click()
-            self.__wait_for_downloads(DOWNLOAD_DIR)
-            logger.info("Download completed.")
+            for i in range(4, 0, -1):
+                try:
+                    element = WebDriverWait(browser, 10).until(
+                        EC.presence_of_element_located(
+                            (By.XPATH, f"/html/body/div[{i}]/div/ul[1]/li[1]/a"))
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to find download element: {e}")
+                    continue
+                element.click()
+                self.__wait_for_downloads(DOWNLOAD_DIR)
+                logger.info("Download completed.")
+                break
         finally:
             browser.quit()
             logger.info("Browser closed after download attempt.")
